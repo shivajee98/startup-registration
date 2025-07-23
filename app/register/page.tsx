@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, Building2, MapPin, Package, DollarSign, Users, FileText, User, UserCheck } from "lucide-react"
+import { uploadToCloudinary } from "./upload"
+import { UploadButton } from "@/components/ui/UploadButtons"
 
 const revenueBrackets = ["₹0–₹5L", "₹5–₹25L", "₹25L–₹1Cr", "₹1Cr–₹5Cr", "₹5Cr+"]
 
@@ -26,8 +28,9 @@ export default function StartupRegistrationForm() {
         name: "",
         websiteURL: "",
         dpiitCertNumber: "",
-        pitchDeckURL: "",
-
+        pitchDeck: null,
+        logo: null,
+        banner: null,
         // Address
         street: "",
         city: "",
@@ -35,14 +38,21 @@ export default function StartupRegistrationForm() {
         pincode: "",
 
         // Product
+        title: "",
         productDescription: "",
         problem: "",
         stage: "",
         selectedUserTypes: [] as string[],
+        price: "",
+        quantity: "",
+        category: "",
+        tags: "",
+        productType: "",
+        images: [],
 
         // Revenue Info
         revenueBracket: "",
-        userImpact: "",
+        userImpact: 0,
 
         // Funding Info
         fundingType: "",
@@ -53,17 +63,17 @@ export default function StartupRegistrationForm() {
         consentToPay: false,
 
         // SPOC
-        spocName: "",
-        spocEmail: "",
-        spocPhone: "",
-        spocPosition: "",
+        Name: "",
+        Email: "",
+        Phone: "",
+        Position: "",
 
         // Director
         directorName: "",
         directorEmail: "",
     })
 
-    const handleInputChange = (field: string, value: string | boolean) => {
+    const handleInputChange = (field: string, value: string | boolean | number) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -79,11 +89,54 @@ export default function StartupRegistrationForm() {
         }))
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Form submitted:", formData)
-        // Handle form submission here
+        try {
+            const res = await fetch("http://localhost:8000/api/startup/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            })
+
+            if (!res.ok) {
+                const errText = await res.text()
+                throw new Error(`Server responded with ${res.status}: ${errText}`)
+            }
+
+            const result = await res.json()
+            console.log("Success:", result)
+            alert("Registration successful!")
+        } catch (error) {
+            console.error("Submission failed:", error)
+            alert("Something went wrong during submission.")
+        }
     }
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const uploadedUrl = await uploadToCloudinary(file);
+            setFormData((prev) => ({ ...prev, pitchDeckURL: uploadedUrl }));
+        } catch (err) {
+            console.error("Upload failed", err);
+            alert("Upload failed");
+        }
+    };
+
+
+    const handleFileChange = (key: keyof typeof formData, files: FileList | null) => {
+        if (!files) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            [key]: key === "images" ? Array.from(files) : files[0], // images = multiple, rest = single
+        }));
+    };
+
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
@@ -127,29 +180,47 @@ export default function StartupRegistrationForm() {
                                 </div>
                             </div>
                             <div>
-                                <Label htmlFor="dpiitCertNumber">DPIIT Certificate Number *</Label>
-                                <Input
-                                    id="dpiitCertNumber"
-                                    value={formData.dpiitCertNumber}
-                                    onChange={(e) => handleInputChange("dpiitCertNumber", e.target.value)}
-                                    placeholder="Enter DPIIT certificate number"
-                                    required
+                                <Label>Pitch Deck PDF *</Label>
+                                <UploadButton
+                                    label="Upload Pitch Deck (PDF)"
+                                    accept="application/pdf"
+                                    multiple={false}
+                                    onUploaded={([url]) => setFormData(fd => ({ ...fd, pitchDeck: url }))}
                                 />
                             </div>
+
                             <div>
-                                <Label htmlFor="pitchDeckURL">Pitch Deck URL *</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="pitchDeckURL"
-                                        value={formData.pitchDeckURL}
-                                        onChange={(e) => handleInputChange("pitchDeckURL", e.target.value)}
-                                        placeholder="Upload pitch deck and paste URL"
-                                        required
+                                <Label>Startup Logo *</Label>
+                                <UploadButton
+                                    label="Upload Startup Logo"
+                                    accept="image/*"
+                                    multiple={false}
+                                    onUploaded={([url]) => setFormData(fd => ({ ...fd, pitchDeck: url }))}
+                                />
+                                {formData.logo && (
+                                    <img
+                                        src={URL.createObjectURL(formData.logo)}
+                                        alt="Logo Preview"
+                                        className="mt-2 w-24 h-24 object-contain border rounded"
                                     />
-                                    <Button type="button" variant="outline" size="icon">
-                                        <Upload className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <Label>Startup Banner *</Label>
+                                <UploadButton
+                                    label="Upload Banner Image"
+                                    accept="image/*"
+                                    multiple={false}
+                                    onUploaded={([url]) => setFormData(fd => ({ ...fd, pitchDeck: url }))}
+                                />
+                                {formData.banner && (
+                                    <img
+                                        src={URL.createObjectURL(formData.banner)}
+                                        alt="Banner Preview"
+                                        className="mt-2 w-full h-32 object-cover border rounded"
+                                    />
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -220,59 +291,109 @@ export default function StartupRegistrationForm() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
-                                <Label htmlFor="productDescription">Product Description *</Label>
-                                <Textarea
-                                    id="productDescription"
-                                    value={formData.productDescription}
-                                    onChange={(e) => handleInputChange("productDescription", e.target.value)}
-                                    placeholder="Describe your product in detail"
-                                    rows={3}
+                                <Label htmlFor="title">Product Title *</Label>
+                                <Input
+                                    id="title"
+                                    value={formData.title}
+                                    onChange={(e) => handleInputChange("title", e.target.value)}
+                                    placeholder="Enter product name"
                                     required
                                 />
                             </div>
-                            <div>
-                                <Label htmlFor="problem">Problem Statement *</Label>
-                                <Textarea
-                                    id="problem"
-                                    value={formData.problem}
-                                    onChange={(e) => handleInputChange("problem", e.target.value)}
-                                    placeholder="What problem does your product solve?"
-                                    rows={3}
-                                    required
-                                />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="price">Price (INR) *</Label>
+                                    <Input
+                                        id="price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={formData.price}
+                                        onChange={(e) => handleInputChange("price", e.target.value)}
+                                        placeholder="Eg. 499.99"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="quantity">Stock Quantity *</Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        min="1"
+                                        value={formData.quantity}
+                                        onChange={(e) => handleInputChange("quantity", e.target.value)}
+                                        placeholder="Eg. 20"
+                                        required
+                                    />
+                                </div>
                             </div>
+
                             <div>
-                                <Label htmlFor="stage">Product Stage *</Label>
-                                <Select value={formData.stage} onValueChange={(value) => handleInputChange("stage", value)}>
+                                <Label htmlFor="category">Category *</Label>
+                                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select product stage" />
+                                        <SelectValue placeholder="Select category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {productStages.map((stage) => (
-                                            <SelectItem key={stage} value={stage}>
-                                                {stage}
+                                        {["Electronics", "Health", "Software", "Education", "Fashion", "Other"].map((cat) => (
+                                            <SelectItem key={cat} value={cat}>
+                                                {cat}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
+
                             <div>
-                                <Label>Target User Types *</Label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-                                    {userTypes.map((userType) => (
-                                        <div key={userType} className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={userType}
-                                                checked={formData.selectedUserTypes.includes(userType)}
-                                                onCheckedChange={() => handleUserTypeToggle(userType)}
-                                            />
-                                            <Label htmlFor={userType} className="text-sm font-normal">
-                                                {userType}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                </div>
+                                <Label htmlFor="tags">Tags (comma-separated)</Label>
+                                <Input
+                                    id="tags"
+                                    value={formData.tags}
+                                    onChange={(e) => handleInputChange("tags", e.target.value)}
+                                    placeholder="Eg. AI, SaaS, Health"
+                                />
                             </div>
+
+                            <div>
+                                <Label htmlFor="productType">Product Type *</Label>
+                                <Select value={formData.productType} onValueChange={(value) => handleInputChange("productType", value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {["Physical", "Digital", "Service"].map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <Label>Product Images *</Label>
+                                <UploadButton
+                                    label="Upload Product Images"
+                                    accept="image/*"
+                                    multiple={true}
+                                    onUploaded={([url]) => setFormData(fd => ({ ...fd, pitchDeck: url }))}
+                                />
+                                {formData.images.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {formData.images.map((img, index) => (
+                                            <img
+                                                key={index}
+                                                src={URL.createObjectURL(img)}
+                                                alt={`Product ${index}`}
+                                                className="w-24 h-24 object-cover border rounded"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                         </CardContent>
                     </Card>
 
@@ -310,7 +431,7 @@ export default function StartupRegistrationForm() {
                                         id="userImpact"
                                         type="number"
                                         value={formData.userImpact}
-                                        onChange={(e) => handleInputChange("userImpact", e.target.value)}
+                                        onChange={(e) => handleInputChange("userImpact", parseInt(e.target.value))}
                                         placeholder="Enter number of users impacted"
                                         required
                                     />
@@ -403,43 +524,43 @@ export default function StartupRegistrationForm() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <Label htmlFor="spocName">Name *</Label>
+                                    <Label htmlFor="Name">Name *</Label>
                                     <Input
-                                        id="spocName"
-                                        value={formData.spocName}
-                                        onChange={(e) => handleInputChange("spocName", e.target.value)}
-                                        placeholder="Enter SPOC name"
+                                        id="Name"
+                                        value={formData.Name}
+                                        onChange={(e) => handleInputChange("Name", e.target.value)}
+                                        placeholder="Enter  name"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="spocEmail">Email *</Label>
+                                    <Label htmlFor="Email">Email *</Label>
                                     <Input
-                                        id="spocEmail"
+                                        id="Email"
                                         type="email"
-                                        value={formData.spocEmail}
-                                        onChange={(e) => handleInputChange("spocEmail", e.target.value)}
-                                        placeholder="Enter SPOC email"
+                                        value={formData.Email}
+                                        onChange={(e) => handleInputChange("Email", e.target.value)}
+                                        placeholder="Enter  email"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="spocPhone">Phone *</Label>
+                                    <Label htmlFor="Phone">Phone *</Label>
                                     <Input
-                                        id="spocPhone"
+                                        id="Phone"
                                         type="tel"
-                                        value={formData.spocPhone}
-                                        onChange={(e) => handleInputChange("spocPhone", e.target.value)}
+                                        value={formData.Phone}
+                                        onChange={(e) => handleInputChange("Phone", e.target.value)}
                                         placeholder="Enter SPOC phone"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="spocPosition">Position *</Label>
+                                    <Label htmlFor="Position">Position *</Label>
                                     <Input
-                                        id="spocPosition"
-                                        value={formData.spocPosition}
-                                        onChange={(e) => handleInputChange("spocPosition", e.target.value)}
+                                        id="Position"
+                                        value={formData.Position}
+                                        onChange={(e) => handleInputChange("Position", e.target.value)}
                                         placeholder="Enter SPOC position"
                                         required
                                     />

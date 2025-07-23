@@ -5,7 +5,7 @@ const RootPage = () => {
   return (
     <>
       <Form />
-      <StallDemo /></>
+    </>
   )
 }
 
