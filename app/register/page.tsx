@@ -264,7 +264,7 @@ export default function StartupRegistrationForm() {
         };
 
         try {
-            const res = await fetch("http://localhost:8000/api/startup/register", {
+            const res = await fetch("https://opexn-expo.onrender.com/api/startup/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -330,6 +330,18 @@ export default function StartupRegistrationForm() {
                                             handleInputChange("websiteURL", e.target.value)
                                         }
                                         placeholder="https://yourwebsite.com"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="dpiitCertNumber">DPIIT Number</Label>
+                                    <Input
+                                        id="dpiitCertNumber"
+                                        type="string"
+                                        value={formData.dpiitCertNumber}
+                                        onChange={(e) =>
+                                            handleInputChange("dpiitCertNumber", e.target.value)
+                                        }
+                                        placeholder="DPIIT CertNumber"
                                     />
                                 </div>
                             </div>
