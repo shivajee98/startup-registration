@@ -48,91 +48,111 @@ const productStages = ["Idea", "Prototype", "MVP", "Beta", "Production"];
 
 const userTypes = ["Students", "Teachers", "Professionals", "Businesses", "General Public"];
 
-interface Product {
-    title: string;
-    price: string; // you may want number type if you parse it before submission
-    quantity: string;
-    category: string;
-    tags: string;
-    productType: string;
-    images: string[]; // Storing uploaded URLs as strings here
+// --- Product ---
+interface ProductImage {
+    url: string;
 }
 
-interface FormData {
-    name: string;
-    websiteURL: string;
-    dpiitCertNumber: string;
-    pitchDeck: string | null; // URL of uploaded file
-    logo: string | null; // URL
-    banner: string | null; // URL
+interface Product {
+    title: string;
+    stage: string;             // Added (missing in your version)
+    users: string[];           // Added (missing in your version)
+    price: number;             // Changed from string -> number
+    quantity: number;          // Changed from string -> number
+    category: string;
+    description: string;
+    tags: string;
+    product_type: string;
+    images: ProductImage[];    // Changed from string[] -> { url: string }[]
+}
 
+// --- Address ---
+interface Address {
     street: string;
     city: string;
     state: string;
     pincode: string;
+}
+
+// --- Director ---
+interface Director {
+    name: string;
+    email: string;
+}
+
+// --- Event Intent ---
+interface EventIntent {
+    why_participate: string;
+    expectation: string;
+    consent_to_pay: boolean;
+}
+
+// --- Funding Info ---
+interface FundingInfo {
+    funding_type: string;
+}
+
+// --- Revenue Info ---
+interface RevenueInfo {
+    revenue_bracket: string;
+    user_impact: number;
+}
+
+// --- SPOC ---
+interface Spoc {
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+}
+
+// --- Root Form Data ---
+interface FormData {
+    name: string;
+    website_url: string;
+    dpiit_cert_number: string;
+    pitch_deck_url: string | null;   // Renamed
+    logo_url: string | null;         // Renamed
+    banner: string | null;
+
+    address: Address;                // Nested
+
+    director: Director;              // Nested
+
+    event_intent: EventIntent;       // Nested
+
+    funding_info: FundingInfo;       // Nested
+
+    revenue_info: RevenueInfo;       // Nested
+
+    spoc: Spoc;                      // Nested
 
     products: Product[];
-
-    revenueBracket: string;
-    userImpact: number;
-
-    fundingType: string;
-
-    whyParticipate: string;
-    expectation: string;
-    consentToPay: boolean;
-
-    Name: string;
-    Email: string;
-    Phone: string;
-    Position: string;
-
-    directorName: string;
-    directorEmail: string;
 }
+
 
 export default function StartupRegistrationForm() {
     const [formData, setFormData] = useState<FormData>({
         name: "",
-        websiteURL: "",
-        dpiitCertNumber: "",
-        pitchDeck: null,
-        logo: null,
+        website_url: "",
+        dpiit_cert_number: "",
+        pitch_deck_url: null,
+        logo_url: null,
         banner: null,
 
-        street: "",
-        city: "",
-        state: "",
-        pincode: "",
+        address: { street: "", city: "", state: "", pincode: "" },
 
-        products: [
-            {
-                title: "",
-                price: "",
-                quantity: "",
-                category: "",
-                tags: "",
-                productType: "",
-                images: [],
-            },
-        ],
+        director: { name: "", email: "" },
 
-        revenueBracket: "",
-        userImpact: 0,
+        event_intent: { why_participate: "", expectation: "", consent_to_pay: false },
 
-        fundingType: "",
+        funding_info: { funding_type: "" },
 
-        whyParticipate: "",
-        expectation: "",
-        consentToPay: false,
+        revenue_info: { revenue_bracket: "", user_impact: 0 },
 
-        Name: "",
-        Email: "",
-        Phone: "",
-        Position: "",
+        spoc: { name: "", email: "", phone: "", position: "" },
 
-        directorName: "",
-        directorEmail: "",
+        products: [],
     });
 
     const handleInputChange = (
@@ -144,22 +164,6 @@ export default function StartupRegistrationForm() {
             [field]: value,
         }));
     };
-
-    // If you want to implement userType toggling, you need to add selectedUserTypes to state
-    // For now commenting out as it’s unused
-    /*
-    const handleUserTypeToggle = (userType: string) => {
-      setFormData((prev) => {
-        const selectedUserTypes = (prev as any).selectedUserTypes as string[] || [];
-        return {
-          ...prev,
-          selectedUserTypes: selectedUserTypes.includes(userType)
-            ? selectedUserTypes.filter((type) => type !== userType)
-            : [...selectedUserTypes, userType],
-        };
-      });
-    };
-    */
 
     const handleProductChange = (
         index: number,
@@ -183,16 +187,20 @@ export default function StartupRegistrationForm() {
                 ...prev.products,
                 {
                     title: "",
-                    price: "",
-                    quantity: "",
+                    stage: "",
+                    users: [],
+                    price: 0,
+                    quantity: 0,
                     category: "",
+                    description: "",
                     tags: "",
-                    productType: "",
+                    product_type: "",
                     images: [],
                 },
             ],
         }));
     };
+
 
     const handleRemoveProduct = (index: number) => {
         setFormData((prev) => {
@@ -204,26 +212,25 @@ export default function StartupRegistrationForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. Convert products
         const parsedProducts = formData.products.map((product) => ({
             title: product.title,
+            stage: product.stage || "",         // ✅ Add stage
+            users: product.users || [],         // ✅ Keep users consistent
             price: parseFloat(product.price),
-            quantity: parseInt(product.quantity),
+            quantity: parseInt(product.quantity, 10),
             category: product.category,
+            description: product.description,
             tags: product.tags,
-            productType: product.productType,
-            images: product.images.map((url) => ({ url })), // Wrap each URL in an object
-            userTypes: [], // Fill this if needed
+            product_type: product.product_type,
+            images: product.images.map((url) => ({ url })),
         }));
 
-        // 2. Construct the backend payload
         const payload = {
             name: formData.name,
-            websiteURL: formData.websiteURL,
-            dpiitCertNumber: formData.dpiitCertNumber,
-
-            pitchDeck: formData.pitchDeck,
-            logo: formData.logo,
+            website_url: formData.website_url,
+            dpiit_cert_number: formData.dpiit_cert_number,
+            pitch_deck_url: formData.pitch_deck,   // ✅ but really you should rename field
+            logo_url: formData.logo,               // ✅ same here
             banner: formData.banner,
 
             address: {
@@ -233,57 +240,37 @@ export default function StartupRegistrationForm() {
                 pincode: formData.pincode,
             },
 
-            products: parsedProducts,
-
-            revenueInfo: {
-                revenueBracket: formData.revenueBracket,
-                userImpact: formData.userImpact,
+            director: {
+                name: formData.director_name,
+                email: formData.director_email,
             },
 
-            fundingInfo: {
-                fundingType: formData.fundingType,
-            },
-
-            eventIntent: {
-                whyParticipate: formData.whyParticipate,
+            event_intent: {
+                why_participate: formData.why_participate,
                 expectation: formData.expectation,
-                consentToPay: formData.consentToPay,
+                consent_to_pay: formData.consent_to_pay,
+            },
+
+            funding_info: {
+                funding_type: formData.funding_type,
+            },
+
+            revenue_info: {
+                revenue_bracket: formData.revenue_bracket,
+                user_impact: formData.userimpact,
             },
 
             spoc: {
-                Name: formData.Name,
-                Email: formData.Email,
-                Phone: formData.Phone,
-                Position: formData.Position,
+                name: formData.spoc.name,
+                email: formData.spoc.email,
+                phone: formData.spoc.phone,
+                position: formData.spoc.position,
             },
 
-            director: {
-                directorName: formData.directorName,
-                directorEmail: formData.directorEmail,
-            },
+            products: parsedProducts,
         };
 
-        try {
-            const res = await fetch("https://opexn-expo.onrender.com/api/startup/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Server responded with ${res.status}: ${errText}`);
-            }
-
-            const result = await res.json();
-            console.log("Success:", result);
-            alert("Registration successful!");
-        } catch (error) {
-            console.error("Submission failed:", error);
-            alert("Something went wrong during submission.");
-        }
+        console.log("Submitting payload:", payload);
     };
 
     return (
@@ -325,21 +312,21 @@ export default function StartupRegistrationForm() {
                                     <Input
                                         id="websiteURL"
                                         type="url"
-                                        value={formData.websiteURL}
+                                        value={formData.website_url}
                                         onChange={(e) =>
-                                            handleInputChange("websiteURL", e.target.value)
+                                            handleInputChange("website_url", e.target.value)
                                         }
                                         placeholder="https://yourwebsite.com"
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="dpiitCertNumber">DPIIT Number</Label>
+                                    <Label htmlFor="dpiit_cert_number">DPIIT Number</Label>
                                     <Input
-                                        id="dpiitCertNumber"
+                                        id="dpiit_cert_number"
                                         type="string"
-                                        value={formData.dpiitCertNumber}
+                                        value={formData.dpiit_cert_number}
                                         onChange={(e) =>
-                                            handleInputChange("dpiitCertNumber", e.target.value)
+                                            handleInputChange("dpiit_cert_number", e.target.value)
                                         }
                                         placeholder="DPIIT CertNumber"
                                     />
@@ -355,9 +342,9 @@ export default function StartupRegistrationForm() {
                                         setFormData((fd) => ({ ...fd, pitchDeck: url }))
                                     }
                                 />
-                                {formData.pitchDeck && (
+                                {formData.pitch_deck && (
                                     <p className="mt-1 text-sm text-green-600">
-                                        Uploaded: {formData.pitchDeck}
+                                        Uploaded: {formData.pitch_deck}
                                     </p>
                                 )}
                             </div>
@@ -484,6 +471,13 @@ export default function StartupRegistrationForm() {
                                         handleProductChange(index, "title", e.target.value)
                                     }
                                 />
+                                <Input
+                                    value={product.description}
+                                    placeholder="Product Description"
+                                    onChange={(e) =>
+                                        handleProductChange(index, "description", e.target.value)
+                                    }
+                                />
                                 <div className="grid grid-cols-2 gap-4">
                                     <Input
                                         value={product.price}
@@ -535,9 +529,9 @@ export default function StartupRegistrationForm() {
                                 </Select>
 
                                 <Select
-                                    value={product.productType}
+                                    value={product.product_type}
                                     onValueChange={(value) =>
-                                        handleProductChange(index, "productType", value)
+                                        handleProductChange(index, "product_type", value)
                                     }
                                 >
                                     <SelectTrigger>
@@ -598,9 +592,9 @@ export default function StartupRegistrationForm() {
                                 <div>
                                     <Label htmlFor="revenueBracket">Revenue Bracket *</Label>
                                     <Select
-                                        value={formData.revenueBracket}
+                                        value={formData.revenue_bracket}
                                         onValueChange={(value) =>
-                                            handleInputChange("revenueBracket", value)
+                                            handleInputChange("revenue_bracket", value)
                                         }
                                     >
                                         <SelectTrigger>
@@ -620,10 +614,10 @@ export default function StartupRegistrationForm() {
                                     <Input
                                         id="userImpact"
                                         type="number"
-                                        value={formData.userImpact}
+                                        value={formData.user_impact}
                                         onChange={(e) =>
                                             handleInputChange(
-                                                "userImpact",
+                                                "user_impact",
                                                 e.target.value === "" ? 0 : parseInt(e.target.value)
                                             )
                                         }
@@ -645,9 +639,9 @@ export default function StartupRegistrationForm() {
                                 <div>
                                     <Label htmlFor="fundingType">Funding Type *</Label>
                                     <Select
-                                        value={formData.fundingType}
+                                        value={formData.funding_type}
                                         onValueChange={(value) =>
-                                            handleInputChange("fundingType", value)
+                                            handleInputChange("funding_type", value)
                                         }
                                     >
                                         <SelectTrigger>
@@ -682,8 +676,8 @@ export default function StartupRegistrationForm() {
                                 <Label htmlFor="whyParticipate">Why do you want to participate? *</Label>
                                 <Textarea
                                     id="whyParticipate"
-                                    value={formData.whyParticipate}
-                                    onChange={(e) => handleInputChange("whyParticipate", e.target.value)}
+                                    value={formData.why_participate}
+                                    onChange={(e) => handleInputChange("why_participate", e.target.value)}
                                     placeholder="Explain your motivation for participating"
                                     rows={3}
                                     required
@@ -703,9 +697,9 @@ export default function StartupRegistrationForm() {
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="consentToPay"
-                                    checked={formData.consentToPay}
+                                    checked={formData.consent_to_pay}
                                     onCheckedChange={(checked) =>
-                                        handleInputChange("consentToPay", checked as boolean)
+                                        handleInputChange("consent_to_pay", checked as boolean)
                                     }
                                 />
                                 <Label htmlFor="consentToPay">
@@ -729,9 +723,9 @@ export default function StartupRegistrationForm() {
                                 <div>
                                     <Label htmlFor="Name">Name *</Label>
                                     <Input
-                                        id="Name"
-                                        value={formData.Name}
-                                        onChange={(e) => handleInputChange("Name", e.target.value)}
+                                        id="name"
+                                        value={formData.spoc_name}
+                                        onChange={(e) => handleInputChange("spoc_name", e.target.value)}
                                         placeholder="Enter  name"
                                         required
                                     />
@@ -741,8 +735,8 @@ export default function StartupRegistrationForm() {
                                     <Input
                                         id="Email"
                                         type="email"
-                                        value={formData.Email}
-                                        onChange={(e) => handleInputChange("Email", e.target.value)}
+                                        value={formData.spoc_email}
+                                        onChange={(e) => handleInputChange("spoc_email", e.target.value)}
                                         placeholder="Enter  email"
                                         required
                                     />
@@ -752,8 +746,8 @@ export default function StartupRegistrationForm() {
                                     <Input
                                         id="Phone"
                                         type="tel"
-                                        value={formData.Phone}
-                                        onChange={(e) => handleInputChange("Phone", e.target.value)}
+                                        value={formData.spoc_phone}
+                                        onChange={(e) => handleInputChange("spoc_phone", e.target.value)}
                                         placeholder="Enter SPOC phone"
                                         required
                                     />
@@ -762,8 +756,8 @@ export default function StartupRegistrationForm() {
                                     <Label htmlFor="Position">Position *</Label>
                                     <Input
                                         id="Position"
-                                        value={formData.Position}
-                                        onChange={(e) => handleInputChange("Position", e.target.value)}
+                                        value={formData.spoc_position}
+                                        onChange={(e) => handleInputChange("spoc_position", e.target.value)}
                                         placeholder="Enter SPOC position"
                                         required
                                     />
@@ -782,10 +776,10 @@ export default function StartupRegistrationForm() {
                                 <div>
                                     <Label htmlFor="directorName">Name *</Label>
                                     <Input
-                                        id="directorName"
-                                        value={formData.directorName}
+                                        id="director_name"
+                                        value={formData.director_name}
                                         onChange={(e) =>
-                                            handleInputChange("directorName", e.target.value)
+                                            handleInputChange("director_name", e.target.value)
                                         }
                                         placeholder="Enter director name"
                                         required
@@ -796,9 +790,9 @@ export default function StartupRegistrationForm() {
                                     <Input
                                         id="directorEmail"
                                         type="email"
-                                        value={formData.directorEmail}
+                                        value={formData.director_email}
                                         onChange={(e) =>
-                                            handleInputChange("directorEmail", e.target.value)
+                                            handleInputChange("director_email", e.target.value)
                                         }
                                         placeholder="Enter director email"
                                         required
