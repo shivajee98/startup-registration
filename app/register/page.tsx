@@ -66,7 +66,7 @@ type FormData = {
     dpiit_cert_number: string;
     pitch_deck_url: string | null;
     logo_url: string | null;
-    banner: string | null;
+    banner_url: string | null;
 
     address: Address;
     director: Director;
@@ -113,7 +113,7 @@ export default function StartupRegistrationForm() {
         dpiit_cert_number: "",
         pitch_deck_url: null,
         logo_url: null,
-        banner: null,
+        banner_url: null,
 
         address: { street: "", city: "", state: "", pincode: "" },
         director: { name: "", email: "" },
@@ -137,6 +137,20 @@ export default function StartupRegistrationForm() {
             },
         ],
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // put this at the top where you initialize formData
 
     // VVVVV FOR TESTING TIME VVVVV
@@ -146,7 +160,7 @@ export default function StartupRegistrationForm() {
     //     dpiit_cert_number: "DPIIT-2025-XYZ",
     //     pitch_deck_url: "https://cdn.test/pitchdeck.pdf",
     //     logo_url: "https://cdn.test/logo.png",
-    //     banner: "https://cdn.test/banner.png",
+    //     banner_url: "https://cdn.test/banner_url.png",
 
     //     address: {
     //         street: "221B Startup Lane",
@@ -293,7 +307,7 @@ export default function StartupRegistrationForm() {
             dpiit_cert_number: formData.dpiit_cert_number,
             pitch_deck_url: formData.pitch_deck_url,
             logo_url: formData.logo_url,
-            banner: formData.banner,
+            banner_url: formData.banner_url,
 
             address: {
                 street: formData.address.street,
@@ -447,11 +461,11 @@ export default function StartupRegistrationForm() {
                                     label="Upload Banner Image"
                                     accept="image/*"
                                     multiple={false}
-                                    onUploaded={([url]) => handleRootChange("banner", url ?? null)}
+                                    onUploaded={([url]) => handleRootChange("banner_url", url ?? null)}
                                 />
-                                {formData.banner && (
+                                {formData.banner_url && (
                                     <img
-                                        src={formData.banner}
+                                        src={formData.banner_url}
                                         alt="Banner Preview"
                                         className="mt-2 w-full h-32 object-cover border rounded"
                                     />
