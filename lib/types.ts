@@ -61,6 +61,9 @@ export type FormData = {
     funding_info: FundingInfo;
     revenue_info: RevenueInfo;
     spoc: Spoc;
+    overview: string | null;
+    business_focus: string | null;
+
 
     products: Product[];
 };

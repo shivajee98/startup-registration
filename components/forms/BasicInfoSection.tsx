@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { UploadButton } from "@/components/ui/UploadButtons";
 import { Building2 } from "lucide-react";
 import { FormData } from "@/lib/types";
+import { Textarea } from "@/components/ui/textarea"; // add textarea import
 
 interface BasicInfoSectionProps {
     formData: FormData;
@@ -52,6 +53,30 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ formData, ha
                             placeholder="DPIIT Cert Number"
                         />
                     </div>
+                </div>
+
+                <div>
+                    <Label htmlFor="overview">Company Overview *</Label>
+                    <Textarea
+                        id="overview"
+                        value={formData.overview ?? ""}
+                        onChange={(e) => handleRootChange("overview", e.target.value)}
+                        placeholder="Write a short overview about the company"
+                        rows={4}
+                        required
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="business_focus">Business Focus *</Label>
+                    <Textarea
+                        id="business_focus"
+                        value={formData.business_focus ?? ""}
+                        onChange={(e) => handleRootChange("business_focus", e.target.value)}
+                        placeholder="Describe the main business focus and areas"
+                        rows={4}
+                        required
+                    />
                 </div>
 
                 <div>
